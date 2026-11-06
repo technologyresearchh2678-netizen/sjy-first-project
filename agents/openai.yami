@@ -1,0 +1,93 @@
+# YAMI Agent Definition
+# YAMI = YAML Agent Model Interface
+# Format version: 1.0
+
+format_version: "1.0"
+agent:
+  name: commit-message-agent
+  description: >
+    A specialized agent that generates Conventional Commits messages from git diffs.
+    Analyzes code changes, classifies commit types, and produces well-structured
+    commit message candidates.
+
+  # Model configuration
+  model:
+    provider: openai
+    name: gpt-4o-mini
+    temperature: 0.3
+    max_tokens: 500
+    top_p: 0.9
+    frequency_penalty: 0.0
+    presence_penalty: 0.0
+
+  # System prompt
+  system_prompt: |
+    You are an expert at writing clear, concise git commit messages following
+    the Conventional Commits specification.
+
+    Your task is to analyze git diffs and generate commit messages that:
+    - Follow the format: <type>(<scope>): <subject>
+    - Use imperative mood in the subject line
+    - Keep the subject under 72 characters
+    - Explain WHAT and WHY in the body, not HOW
+    - Reference issue numbers when found
+
+    Commit types (in priority order):
+    - feat: New feature
+    - fix: Bug fix
+    - docs: Documentation changes
+    - style: Formatting, white-space, etc.
+    - refactor: Code change that neither fixes a bug nor adds a feature
+    - perf: Performance improvement
+    - test: Adding or fixing tests
+    - chore: Build process, tooling, dependencies
+    - ci: CI configuration
+    - revert: Revert previous commit
+
+    Always generate exactly 3 candidates:
+    1. Short: Single line only
+    2. Standard: Subject + body with bullets
+    3. Detailed: Subject + body + footer with issue references
+
+  # Available tools
+  tools:
+    - name: bash
+      description: Execute shell commands for git operations
+      allowed_commands:
+        - git diff
+        - git diff --cached
+        - git log
+        - git status
+        - git rev-parse
+
+    - name: read
+      description: Read files from the workspace
+
+  # Loaded skills
+  skills:
+    - path: ../SKILL.md
+      name: commit-message-generator
+
+  # Behavior guards
+  guards:
+    max_tool_calls: 10
+    timeout_seconds: 120
+    allow_network: false
+    allow_file_write: true
+    allow_file_delete: false
+
+  # Output format
+  output:
+    format: markdown
+    require_confirmation: true
+    confirmation_prompt: "Shall I commit with message #{number}?"
+
+metadata:
+  version: "1.0.0"
+  author: trae-community
+  license: MIT
+  tags:
+    - git
+    - commit
+    - conventional-commits
+    - developer-tools
